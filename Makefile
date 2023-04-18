@@ -1,7 +1,8 @@
 CC=clang
 CFLAGS=-Wall -Wextra -Werror -std=c11 -pedantic
 
-all: word-count
+.PHONY: all
+all: word-count mr.o
 
 word-count: word-count.c kvlist.o mr.o hash.o
 
