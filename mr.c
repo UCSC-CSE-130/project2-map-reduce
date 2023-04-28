@@ -16,17 +16,30 @@ typedef struct mainarg{
 
 void *threader(void *arg){
     
+    int i = 0;
     struct mainarg *dsi = arg;
     mapper_t mapper = dsi->mapper;
     kvlist_iterator_t *iter = kvlist_iterator_new(dsi->array);
     kvpair_t *pair = kvlist_iterator_next(iter);
-    for(;;){
-        pair = kvlist_iterator_next(iter);
+    kvlist_print(1, dsi->array);
+    printf("before the loop %d \n", i);
+    for(;;){ 
+        printf("in the loop %d \n", i);
         if(pair == NULL){
             break;
         }
-        mapper(pair, dsi->output);
+        mapper(kvpair_clone(pair), dsi->output);
+        printf("before mapper %d \n", i);
+        pair = kvlist_iterator_next(iter);
+        
+        printf("after mapper %d \n", i);
+        //kvlist_print(1, dsi->output);
+        
+        i++;
+        
     }
+    // kvlist_print(1, dsi->output);
+    return NULL;
 }
 
 void map_reduce(mapper_t mapper, size_t num_mapper, reducer_t reducer,
@@ -62,41 +75,38 @@ void map_reduce(mapper_t mapper, size_t num_mapper, reducer_t reducer,
                         if(pair == NULL){
                             break;
                         }
-                        kvlist_append(array[j],pair);
+                        kvlist_append(array[j],kvpair_clone(pair));
         
                    }
                 }
-                printf("1");
                 for(size_t i = 0; i < rem; i++){
                     pair = kvlist_iterator_next(it);
                         if(pair == NULL){
                             break;
                         }
-                        kvlist_append(array[i],pair);
+                        kvlist_append(array[i],kvpair_clone(pair));
                 }
-                printf("1");
-                printf("first thread");
-                kvlist_print(1, array[0]);
-                kvlist_print(1, array[1]);
-                kvlist_print(1, array[2]);
-                printf("second thread");
+                // kvlist_print(1, array[0]);
+                // kvlist_print(1, array[1]);
+                // kvlist_print(1, array[2]);
+                // printf("second thread");
                 // printf("1");
-                // pthread_t threads[num_mapper];
-                // struct mainarg arby;
-                // arby.mapper = mapper;
-                // printf("2");
-                // kvlist_t **maparr = (kvlist_t **)malloc(num_mapper * sizeof(kvlist_t *));
-                // printf("3");
-
-                // for(size_t i = 0; i < num_mapper; i++){
-                // printf("4");
-
-                //     arby.array = array[i];
-                //     arby.output = maparr[i];
-                //     printf("5");
-
-                //     pthread_create(&threads[i], NULL, threader,(void *) &arby);
-                //     printf("%zu", i);
+                // printf("1");
+                pthread_t threads[num_mapper];
+                struct mainarg arby;
+                arby.mapper = mapper;
+                kvlist_t **maparr = (kvlist_t **)malloc(num_mapper * sizeof(kvlist_t *));
+                for(size_t i = 0; i < num_mapper; i++){
+                    arby.array = array[i];
+                    arby.output = maparr[i];
+                    pthread_create(&threads[i], NULL, threader,(void *) &arby);
+                    pthread_join(threads[i], NULL);
+                }
+                // for(size_t i = 0; i < num_mapper ;i++){
+                //     pthread_join(threads[i], NULL);
                 // }
-                // kvlist_print(1,maparr[0]);
+
+                // for(size_t i = 0; i < num_mapper ;i++){
+                //     kvlist_print(1, maparr[i]);
+                // }
             }
